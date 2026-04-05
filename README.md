@@ -1,12 +1,12 @@
-# ASHA Worker Voice AI – Memory Prosthetic for Rural Healthcare
+# ASHA Worker Voice AI – AI Field Companion for Rural Healthcare
 
 ## Overview
 
 ASHA (Accredited Social Health Activist) workers are the backbone of India's rural healthcare system. Each worker typically manages the health records of around 150–200 families. Currently, most of this information is maintained in paper registers and through memory, which leads to incomplete records, missed immunizations, and delayed referrals.
 
-This project proposes a **voice-first AI assistant** that acts as a **memory prosthetic** for ASHA workers. The application allows workers to speak patient updates naturally in their local dialect, automatically converting the spoken input into structured health records and providing spoken guidance for next actions.
+This project proposes an **offline AI field assistant** that acts as a **memory + planning companion** for ASHA workers. It remembers every household’s health history and proactively guides workers on what to do next.
 
-The core principle of the system is that **the interface itself is the innovation** — removing the need for typing, reading, or complex digital interaction.
+The core principle of the system is that **the AI reduces the thinking burden**, not just the data entry burden.
 
 ---
 
@@ -14,72 +14,57 @@ The core principle of the system is that **the interface itself is the innovatio
 
 ASHA workers are responsible for tracking pregnancies, vaccinations, illnesses, and follow-ups across hundreds of households. However, they rely heavily on paper registers and personal memory to manage this information.
 
-Existing digital health applications often fail because they assume:
+Existing digital health applications often fail because they focus on **collecting and reporting data** for supervisors, rather than **guiding and remembering** for the worker. This results in:
 
-- literacy
-- familiarity with smartphones
-- ability to type or read complex forms
-- continuous internet connectivity
+- High cognitive load (remembering who needs what)
+- Fragmented health records
+- Missed immunization schedules
+- Delayed medical referrals
 
-These assumptions make current solutions impractical for many ASHA workers, resulting in:
-
-- fragmented health records
-- missed immunization schedules
-- delayed medical referrals
-- heavy administrative workload
-
-There is a critical need for a system that enables **frictionless health data recording without requiring literacy or typing**.
+There is a critical need for a system that enables **frictionless health management without requiring literacy or typing**.
 
 ---
 
-# Proposed Solution
+# Proposed Solution: AI Field Companion
 
-We propose a **voice-first offline mobile application** that functions as a digital memory assistant for ASHA workers.
+We propose a **voice-first offline AI assistant** that functions as a digital memory and decision-support system. Instead of just "recording data," the system focuses on three core abilities:
 
-The worker simply speaks natural sentences such as:
+### 1. Memory Engine
+The system remembers past visits and brings them up automatically. It acts as the worker's long-term memory.
+- **Example:** ASHA says: *"Raju ka ghar"*
+- **System responds:** *"Last visit: diarrhea case. Follow-up needed. Also, his 2nd polio dose is pending."*
 
-> "Sunita ka beta, 3 saal, bukhar 3 din se"
+### 3. Daily Visit Planner
+The AI acts as a personal secretary, providing a morning briefing to prioritize work.
+- **Example:** *"Today's priority visits: 1. Meena (Vaccine due), 2. Aman (Fever follow-up), 3. Pooja (Pregnancy week 32 check)."*
 
-The system will:
-
-1. Convert speech to text
-2. Extract structured health information
-3. Update the corresponding family health record
-4. Check vaccination schedules and medical rules
-5. Speak back recommended next actions
-
-Example response:
-
-> "Bachche ko teen din se bukhar hai. Agar kal tak theek na ho toh PHC le jaaiye. DPT booster bhi due hai."
-
-The entire interaction is **voice-driven**, removing the need for reading or typing.
+### 3. Conversational Guidance & Risk Alerts
+The system provides real-time decision support based on national health guidelines.
+- **Example (ASHA asks):** *"3 din se bukhar ho toh kya karein?"*
+- **AI replies:** *"Check for shivering. If child age < 5 and fever > 2 days, possible malaria risk. Suggest PHC referral immediately."*
 
 Key design principles:
 
-- Voice-first interaction
-- Offline functionality
-- Local dialect support
-- Minimal user interface
-- Automatic health record generation
+- **Voice-first:** No typing or reading complex forms.
+- **Offline-first:** Works in the most remote villages.
+- **Memory-native:** Reduces the cognitive burden of tracking 200 families.
+- **Proactive:** Tells the worker what to do, rather than just waiting for input.
 
 ---
 
 # Technical Architecture
 
-The system follows an **offline-first architecture** designed for low-connectivity environments.
-
+The system follows an **offline-first intelligence architecture**.
 
 ASHA Worker Voice Input
 ↓
 Offline Speech Recognition
 ↓
-Natural Language Parsing
+Natural Language Parsing (Intent & Data)
 ↓
-Structured Health Data
+**Memory & Planning Engine** (Context Retrieval)
 ↓
-Local SQLite Health Database
-↓
-Clinical Rule Engine
+**Health Rule Engine** (Decision Support)
 ↓
 Voice Response (Text-to-Speech)
 
@@ -89,340 +74,67 @@ Voice Response (Text-to-Speech)
 # Technology Stack
 
 ## Mobile Application
-
-Framework options:
-
-- Flutter
-- React Native
-- Native Android (Kotlin)
-
-Target platform: **Low-cost Android devices**
+- **Framework:** Native Android (Kotlin)
+- **Database:** SQLite (Room) for local persistent memory.
+- **Speech-to-Text:** Vosk (Offline)
+- **Text-to-Speech:** Android TTS API
 
 ---
 
-## Speech Recognition (Offline)
+# Natural Language Parsing
 
-Purpose: Convert spoken input to text.
-
-Possible technologies:
-
-- Whisper.cpp
-- Vosk Speech Recognition
-
-Requirements:
-
-- Hindi language support
-- Dialect robustness
-- Offline operation
-
-Example output:
-
-
-Sunita ka beta 3 saal bukhar 3 din se
-
-
----
-
-## Natural Language Parsing
-
-The spoken sentence must be converted into structured medical data.
+The spoken sentence must be converted into structured medical data and intent.
 
 Example:
-
-Input:
-
-
-Sunita ka beta 3 saal bukhar 3 din se
-
-
+Input: *"Sunita ka beta 3 saal bukhar 3 din se"*
 Parsed Output:
-
-
+```json
 {
-patient: "Sunita ka beta",
-age: 3,
-symptom: "fever",
-duration: "3 days"
+  "intent": "record_visit",
+  "patient": "Sunita ka beta",
+  "age": 3,
+  "symptom": "fever",
+  "duration": "3 days"
 }
-
-
-Implementation options:
-
-### Option 1 – Rule-Based Parsing (Recommended for MVP)
-
-Example rules:
-
-
-if "bukhar" → fever
-if "khansi" → cough
-if "3 din" → duration = 3 days
-
-
-### Option 2 – Small On-Device LLM
-
-Possible models:
-
-- Phi-3 Mini
-- Gemma 2B
-- Qwen 2.5 3B
-
-Runtime options:
-
-- llama.cpp
-- Ollama (if device allows)
+```
 
 ---
 
 # Local Health Database
 
-All patient data is stored locally using **SQLite**.
-
-Reasons for SQLite:
-
-- Fully offline
-- Lightweight
-- Reliable
-- Built into Android
-- Handles thousands of records easily
-
-Database file example:
-
-
-health_records.db
-
-
----
-
-## Database Schema (Example)
-
-### Families Table
-
-
-family_id
-household_name
-village
-asha_worker_id
-
-
-### Patients Table
-
-
-patient_id
-family_id
-name
-age
-gender
-
-
-### Visit Records
-
-
-visit_id
-patient_id
-date
-symptom
-duration
-notes
-
-
-Example stored record:
-
-
-Patient: Aman
-Age: 3
-Symptom: Fever
-Duration: 3 days
-Date: 2026-04-05
-
+All patient data is stored locally using **SQLite**. The database acts as the "Memory Engine," storing entire household histories to provide context for future visits.
 
 ---
 
 # Clinical Decision Engine
 
-The system contains simple medical rules referencing national health guidelines.
-
-Examples:
-
-
-If child age < 5 AND fever > 2 days
-→ recommend PHC visit
-
-If vaccination due
-→ notify ASHA worker
-
-
-The rule engine can be implemented using:
-
-- Python
-- JavaScript
-- Embedded rule tables
-
----
-
-# Voice Response (Text-to-Speech)
-
-After processing the input, the system responds using spoken guidance.
-
-Example:
-
-> "Bachche ko bukhar hai. Agar kal tak theek na ho toh doctor ko dikhaiye."
-
-Possible technologies:
-
-- Piper TTS
-- Coqui TTS
-- Android Text-to-Speech API
-
-Requirements:
-
-- Hindi speech
-- Low-latency
-- Offline operation
-
----
-
-# User Interface Design
-
-The interface must remain **extremely simple**.
-
-Recommended layout:
-
-
- Record Visit
-
-📂 Family Records
-
-🔊 Listen Guidance
-
-
-Typical workflow:
-
-1. ASHA presses **Record**
-2. Speaks patient update
-3. AI processes the input
-4. Health record is updated
-5. Voice guidance is spoken
-
-No typing or form filling required.
-
----
-
-# Dialect Handling
-
-India has significant linguistic variation.
-
-To handle dialect differences, the system uses **symptom synonym mapping**.
-
-Example mapping:
-
-
-bukhar → fever
-jwar → fever
-tap → fever
-fever → fever
-
-
-Additional dialect datasets can be expanded over time.
-
----
-
-# Offline Synchronization
-
-The application operates **fully offline**.
-
-When internet connectivity becomes available:
-
-
-SQLite Database
-↓
-Encrypted Upload
-↓
-District Health Server
-↓
-Central Health Records
-
-
-This enables integration with:
-
-- government health databases
-- doctor dashboards
-- analytics systems
+The system identifies high-risk cases automatically using national health guidelines.
+- **Example:** Child fever > 3 days → Suggest PHC referral.
 
 ---
 
 # Impact and Benefits
 
-The system provides several benefits for frontline healthcare:
-
-### Reduced Cognitive Load
-
-ASHA workers no longer need to remember hundreds of health records.
-
-### Faster Data Entry
-
-Speaking is significantly faster than writing or typing.
-
-### Improved Continuity of Care
-
-Family health records are automatically maintained.
-
-### Reduced Missed Vaccinations
-
-The system flags due immunizations.
-
-### Early Medical Referrals
-
-Simple clinical rules help identify risk conditions.
-
-At national scale, the system could improve healthcare delivery across **millions of rural households**.
+- **Reduced Cognitive Load:** ASHA workers no longer need to remember hundreds of health records.
+- **Proactive Care:** System identifies follow-ups and missed vaccinations automatically.
+- **Offline Reliability:** No dependency on internet for core field work.
+- **Early Medical Referrals:** AI identifies risk conditions before they become critical.
 
 ---
 
 # Potential Future Features
 
-### Daily Visit Planner
-
-Each morning the system suggests households to visit:
-
-Example:
-
-
-Today's Visits:
-
-Meena – vaccination due
-Raju – diarrhea follow-up
-Pooja – pregnancy week 32 check
-
 ### Pregnancy Monitoring
-
-Automatic reminders for antenatal visits.
+Automatic reminders for antenatal visits based on LMP.
 
 ### Child Growth Tracking
-
-Weight and nutrition monitoring.
+Weight and nutrition monitoring with visual alerts.
 
 ### Doctor Teleconsult Integration
-
-Voice-based referral to remote doctors.
-
----
-
-# Research and References
-
-Key sources informing this project include:
-
-- National Health Mission (NHM) reports on ASHA workforce
-- World Health Organization studies on community health workers
-- Research on voice interfaces for low-literacy populations
-- Mobile health (mHealth) system design literature
-- Offline speech recognition technologies such as Whisper and Vosk
-
-These references highlight the need for accessible, low-friction digital tools for last-mile healthcare delivery.
+Voice-based referral to remote doctors when internet is available.
 
 ---
 
 # Conclusion
 
-The proposed system transforms how ASHA workers interact with healthcare data by replacing paper registers and memory-based tracking with a **voice-driven AI assistant**.
-
-By prioritizing **usability, offline capability, and natural interaction**, the solution empowers frontline health workers and strengthens the foundation of rural healthcare infrastructure.
+The proposed system transforms how ASHA workers interact with healthcare data by replacing paper registers with a **proactive AI Field Companion**. By prioritizing **memory and guidance**, the solution empowers frontline health workers to deliver better care with less effort.
