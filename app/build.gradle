@@ -5,6 +5,7 @@ apply plugin: 'kotlin-kapt'
 android {
     namespace 'com.asha.worker.ai'
     compileSdk 34
+    buildToolsVersion "35.0.0"
 
     defaultConfig {
         applicationId "com.asha.worker.ai"
@@ -28,6 +29,9 @@ android {
     }
     kotlinOptions {
         jvmTarget = '1.8'
+    }
+    buildFeatures {
+        viewBinding true
     }
 }
 
