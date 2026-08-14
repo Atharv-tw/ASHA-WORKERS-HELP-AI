@@ -109,8 +109,8 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
             db.visitDao().insert(
                 VisitRecord(
                     patientName = visit.patientName ?: "Unknown",
-                    age = visit.age,
-                    symptom = visit.symptom,
+                    age = visit.ageYears,
+                    symptom = visit.symptomCode,
                     durationDays = visit.durationDays
                 )
             )

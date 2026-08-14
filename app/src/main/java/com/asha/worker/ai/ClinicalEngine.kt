@@ -3,21 +3,21 @@ package com.asha.worker.ai
 class ClinicalEngine {
 
     fun getGuidance(visit: HealthVisit): String {
-        val name = visit.patientName ?: "Bachche"
-        val symptom = visit.symptom
+        val name = visit.patientName ?: "बच्चे"
+        val symptom = visit.symptomCode
         val duration = visit.durationDays ?: 0
 
         return when {
-            symptom == "fever" && duration >= 3 -> 
-                "$name ko teen din se bukhar hai. Use turant PHC le jaaiye."
-            symptom == "fever" -> 
-                "$name ko bukhar hai. Use paracetamol dijiye aur kal tak intezar kijiye."
-            symptom == "diarrhea" -> 
-                "$name ko dast hai. Use ORS ka ghol pilaiye aur saaf pani dijiye."
-            symptom == "cough" -> 
-                "$name ko khansi hai. Use garam pani pilaiye."
-            else -> 
-                "Theek hai. Maine jankari darj kar li hai."
+            symptom == HealthDataParser.Symptom.FEVER && duration >= 3 ->
+                "$name को तीन दिन से बुखार है। उसे तुरंत पीएचसी ले जाइए।"
+            symptom == HealthDataParser.Symptom.FEVER ->
+                "$name को बुखार है। पैरासिटामोल दीजिए और कल तक इंतज़ार कीजिए।"
+            symptom == HealthDataParser.Symptom.DIARRHEA ->
+                "$name को दस्त है। ओआरएस का घोल पिलाइए और साफ़ पानी दीजिए।"
+            symptom == HealthDataParser.Symptom.COUGH ->
+                "$name को खांसी है। गरम पानी पिलाइए।"
+            else ->
+                "ठीक है। मैंने जानकारी दर्ज कर ली है।"
         }
     }
 }
