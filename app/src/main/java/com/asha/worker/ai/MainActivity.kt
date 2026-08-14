@@ -146,7 +146,7 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
 
     override fun onDestroy() {
         super.onDestroy()
-        voskService.stopListening()
+        voskService.destroy()
         ttsService.shutdown()
     }
 }

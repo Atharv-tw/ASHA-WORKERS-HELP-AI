@@ -1,0 +1,5 @@
+# Store the large offline Vosk Hindi voice model via Git LFS instead of inline.
+app/src/main/assets/model-hi/** filter=lfs diff=lfs merge=lfs -text
+
+# The Unix Gradle wrapper must keep LF line endings to run on macOS/Linux.
+gradlew text eol=lf
