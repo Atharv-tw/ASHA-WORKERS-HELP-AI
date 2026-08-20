@@ -2,6 +2,7 @@ package com.asha.worker.ai
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
@@ -12,7 +13,9 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.asha.worker.ai.data.AppDatabase
 import com.asha.worker.ai.data.AshaRepository
+import com.asha.worker.ai.planner.BriefingGenerator
 import com.asha.worker.ai.text.DevanagariNormalizer
+import com.asha.worker.ai.work.MorningBriefingWorker
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -33,6 +36,7 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
 
     companion object {
         private const val PERMISSIONS_REQUEST_RECORD_AUDIO = 1
+        private const val PERMISSIONS_REQUEST_NOTIFICATIONS = 2
         private const val DAY_MILLIS = 24L * 60 * 60 * 1000
     }
 
@@ -47,6 +51,16 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
         ttsService = TtsService(this)
         repo = AshaRepository(AppDatabase.get(this))
         clinicalEngine = ClinicalEngine(ClinicalRules.load(this))
+
+        MorningBriefingWorker.schedule(this)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), PERMISSIONS_REQUEST_NOTIFICATIONS
+            )
+        }
 
         val permissionCheck =
             ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.RECORD_AUDIO)
@@ -122,7 +136,7 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
             Intent.RECORD_VISIT -> recordVisit(text)
             Intent.GUIDANCE_QUERY -> handleGuidance(text)
             Intent.RECALL -> handleRecall(text)
-            Intent.DAILY_PLAN -> speakAndShow(getString(R.string.plan_not_ready))
+            Intent.DAILY_PLAN -> handleDailyPlan()
             Intent.UNKNOWN -> speakAndShow(getString(R.string.not_understood))
         }
     }
@@ -146,6 +160,12 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
         lifecycleScope.launch {
             val result = repo.recall(name)
             speakAndShow(MemoryNarrator.narrate(name, result))
+        }
+    }
+
+    private fun handleDailyPlan() {
+        lifecycleScope.launch {
+            speakAndShow(BriefingGenerator.briefing(repo.todaysPlan()))
         }
     }
 

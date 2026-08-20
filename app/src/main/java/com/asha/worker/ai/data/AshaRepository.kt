@@ -1,6 +1,8 @@
 package com.asha.worker.ai.data
 
 import com.asha.worker.ai.HealthVisit
+import com.asha.worker.ai.planner.PlanItem
+import com.asha.worker.ai.schedule.ImmunizationSchedule
 import com.asha.worker.ai.schedule.ImmunizationScheduler
 import com.asha.worker.ai.schedule.PregnancyTracker
 import com.asha.worker.ai.text.PhoneticKey
@@ -79,6 +81,27 @@ class AshaRepository(private val db: AppDatabase) {
     suspend fun openFollowUps(byMillis: Long): List<FollowUpTask> =
         withContext(Dispatchers.IO) { db.followUpDao().openDueBy(byMillis) }
 
+    /** Ranked plan of everything due by [byMillis] (default: through tomorrow). */
+    suspend fun todaysPlan(
+        byMillis: Long = System.currentTimeMillis() + DAY_MILLIS
+    ): List<PlanItem> = withContext(Dispatchers.IO) {
+        val items = mutableListOf<PlanItem>()
+        db.followUpDao().openDueBy(byMillis).forEach { t ->
+            val name = db.patientDao().getById(t.patientId)?.name ?: UNKNOWN_NAME
+            val reason = when (t.type) {
+                FollowUpType.ANC -> "एएनसी जाँच"
+                FollowUpType.SYMPTOM -> "फ़ॉलो-अप"
+                else -> t.reason
+            }
+            items.add(PlanItem(name, reason, t.dueMillis))
+        }
+        db.immunizationDao().dueBy(byMillis).forEach { im ->
+            val name = db.patientDao().getById(im.patientId)?.name ?: UNKNOWN_NAME
+            items.add(PlanItem(name, "टीकाकरण — ${ImmunizationSchedule.labelFor(im.vaccineCode)}", im.dueMillis))
+        }
+        items.sortedBy { it.dueMillis }
+    }
+
     /** Look up a household/patient by spoken name and gather their memory. */
     suspend fun recall(name: String): RecallResult? = withContext(Dispatchers.IO) {
         val key = PhoneticKey.of(name)
@@ -134,6 +157,7 @@ class AshaRepository(private val db: AppDatabase) {
     companion object {
         private const val UNKNOWN_NAME = "अज्ञात"
         private const val AVG_MONTH_MILLIS = 2_629_746_000L // 30.44 days
+        private const val DAY_MILLIS = 24L * 60 * 60 * 1000
     }
 }
 

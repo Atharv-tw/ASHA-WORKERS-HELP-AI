@@ -45,6 +45,9 @@ object ImmunizationSchedule {
             VaccineDef(o.getString("code"), o.getString("label"), o.getInt("dueAgeDays"))
         }
     }
+
+    /** Spoken Hindi label for a vaccine code (falls back to the code itself). */
+    fun labelFor(code: String): String = DEFAULT.firstOrNull { it.code == code }?.label ?: code
 }
 
 /** Computes concrete due dates for a child from date of birth. */
