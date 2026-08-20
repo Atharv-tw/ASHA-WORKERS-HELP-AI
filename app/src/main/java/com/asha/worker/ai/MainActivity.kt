@@ -15,6 +15,8 @@ import com.asha.worker.ai.data.AppDatabase
 import com.asha.worker.ai.data.AshaRepository
 import com.asha.worker.ai.planner.BriefingGenerator
 import com.asha.worker.ai.text.DevanagariNormalizer
+import com.asha.worker.ai.ui.PatientListActivity
+import com.asha.worker.ai.ui.TodayPlanActivity
 import com.asha.worker.ai.work.MorningBriefingWorker
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -73,6 +75,12 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
         }
 
         recordButton.setOnClickListener { toggleRecording() }
+        findViewById<Button>(R.id.planButton).setOnClickListener {
+            startActivity(android.content.Intent(this, TodayPlanActivity::class.java))
+        }
+        findViewById<Button>(R.id.patientsButton).setOnClickListener {
+            startActivity(android.content.Intent(this, PatientListActivity::class.java))
+        }
     }
 
     private fun initVosk() {

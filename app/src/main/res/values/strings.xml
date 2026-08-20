@@ -5,6 +5,10 @@
     <string name="welcome">नमस्ते, आशा दीदी</string>
     <string name="btn_record">विज़िट रिकॉर्ड करें</string>
     <string name="btn_stop">रोकें</string>
+    <string name="mic_content_desc">बोलने के लिए दबाएँ</string>
+    <string name="btn_today_plan">आज की योजना</string>
+    <string name="btn_patients">मरीज़ सूची</string>
+    <string name="disclaimer">यह सलाह केवल मार्गदर्शन है, चिकित्सा निदान नहीं। ज़रूरत पर पीएचसी/डॉक्टर से संपर्क करें।</string>
 
     <!-- Status messages -->
     <string name="status_initializing">हिंदी वॉइस मॉडल तैयार हो रहा है…</string>
@@ -14,7 +18,11 @@
     <string name="permission_denied">माइक्रोफ़ोन की अनुमति ज़रूरी है</string>
 
     <!-- Routed responses -->
-    <string name="plan_not_ready">आज की योजना अभी तैयार नहीं है।</string>
     <string name="not_understood">माफ़ कीजिए, मैं समझ नहीं पाया।</string>
-    <string name="recall_pending">याद करने की सुविधा तैयार हो रही है।</string>
+
+    <!-- Secondary screens -->
+    <string name="title_today_plan">आज की योजना</string>
+    <string name="title_patients">मरीज़ सूची</string>
+    <string name="empty_plan">आज कोई ज़रूरी विज़िट नहीं है।</string>
+    <string name="empty_patients">अभी तक कोई मरीज़ दर्ज नहीं है।</string>
 </resources>
