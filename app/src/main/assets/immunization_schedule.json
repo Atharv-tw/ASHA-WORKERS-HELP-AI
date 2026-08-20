@@ -1,0 +1,15 @@
+[
+  { "code": "BCG",    "label": "बीसीजी",                  "dueAgeDays": 0 },
+  { "code": "OPV0",   "label": "ओपीवी-0",                 "dueAgeDays": 0 },
+  { "code": "HEPB0",  "label": "हेपेटाइटिस बी जन्म खुराक", "dueAgeDays": 0 },
+  { "code": "PENTA1", "label": "पेंटावैलेंट-1",            "dueAgeDays": 42 },
+  { "code": "OPV1",   "label": "ओपीवी-1",                 "dueAgeDays": 42 },
+  { "code": "PENTA2", "label": "पेंटावैलेंट-2",            "dueAgeDays": 70 },
+  { "code": "OPV2",   "label": "ओपीवी-2",                 "dueAgeDays": 70 },
+  { "code": "PENTA3", "label": "पेंटावैलेंट-3",            "dueAgeDays": 98 },
+  { "code": "OPV3",   "label": "ओपीवी-3",                 "dueAgeDays": 98 },
+  { "code": "MR1",    "label": "खसरा-रूबेला 1",           "dueAgeDays": 270 },
+  { "code": "VITA1",  "label": "विटामिन ए 1",             "dueAgeDays": 270 },
+  { "code": "DPTB1",  "label": "डीपीटी बूस्टर 1",         "dueAgeDays": 480 },
+  { "code": "MR2",    "label": "खसरा-रूबेला 2",           "dueAgeDays": 480 }
+]

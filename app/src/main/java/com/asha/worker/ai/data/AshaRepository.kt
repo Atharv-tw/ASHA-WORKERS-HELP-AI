@@ -1,6 +1,8 @@
 package com.asha.worker.ai.data
 
 import com.asha.worker.ai.HealthVisit
+import com.asha.worker.ai.schedule.ImmunizationScheduler
+import com.asha.worker.ai.schedule.PregnancyTracker
 import com.asha.worker.ai.text.PhoneticKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -51,8 +53,31 @@ class AshaRepository(private val db: AppDatabase) {
                 )
             )
         }
+        // Enrol a young child in the immunization schedule the first time we meet them.
+        val ageMonths = visit.ageMonths
+        if (ageMonths != null && ageMonths < 24 && db.immunizationDao().forPatient(patient.id).isEmpty()) {
+            val dob = patient.dobMillis ?: (System.currentTimeMillis() - ageMonths * AVG_MONTH_MILLIS)
+            db.immunizationDao().insertAll(ImmunizationScheduler.forPatient(patient.id, dob))
+        }
         visitId
     }
+
+    /** Mark a patient pregnant and lay out the four ANC visit reminders from the LMP. */
+    suspend fun enrollPregnancy(patientId: Long, lmpMillis: Long) = withContext(Dispatchers.IO) {
+        val p = db.patientDao().getById(patientId) ?: return@withContext
+        db.patientDao().update(p.copy(pregnant = true, lmpMillis = lmpMillis))
+        PregnancyTracker.ancSchedule(lmpMillis).forEach { (code, due) ->
+            db.followUpDao().insert(
+                FollowUpTask(patientId = patientId, type = FollowUpType.ANC, dueMillis = due, reason = code)
+            )
+        }
+    }
+
+    suspend fun dueImmunizations(byMillis: Long): List<Immunization> =
+        withContext(Dispatchers.IO) { db.immunizationDao().dueBy(byMillis) }
+
+    suspend fun openFollowUps(byMillis: Long): List<FollowUpTask> =
+        withContext(Dispatchers.IO) { db.followUpDao().openDueBy(byMillis) }
 
     /** Look up a household/patient by spoken name and gather their memory. */
     suspend fun recall(name: String): RecallResult? = withContext(Dispatchers.IO) {
