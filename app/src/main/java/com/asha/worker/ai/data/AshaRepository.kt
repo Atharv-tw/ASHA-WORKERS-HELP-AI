@@ -31,7 +31,7 @@ class AshaRepository(private val db: AppDatabase) {
         followUpMillis: Long? = null
     ): Long = withContext(Dispatchers.IO) {
         val patient = findOrCreatePatient(visit.patientName, visit.ageMonths, visit.pregnantGender())
-        db.visitDao().insert(
+        val visitId = db.visitDao().insert(
             Visit(
                 patientId = patient.id,
                 symptomCode = visit.symptomCode,
@@ -41,6 +41,17 @@ class AshaRepository(private val db: AppDatabase) {
                 followUpMillis = followUpMillis
             )
         )
+        if (followUpMillis != null) {
+            db.followUpDao().insert(
+                FollowUpTask(
+                    patientId = patient.id,
+                    type = FollowUpType.SYMPTOM,
+                    dueMillis = followUpMillis,
+                    reason = guidance
+                )
+            )
+        }
+        visitId
     }
 
     /** Look up a household/patient by spoken name and gather their memory. */

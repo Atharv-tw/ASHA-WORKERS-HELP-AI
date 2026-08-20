@@ -27,12 +27,13 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
 
     private val parser = HealthDataParser()
     private val router = IntentRouter(parser)
-    private val clinicalEngine = ClinicalEngine()
+    private lateinit var clinicalEngine: ClinicalEngine
 
     private var isRecording = false
 
     companion object {
         private const val PERMISSIONS_REQUEST_RECORD_AUDIO = 1
+        private const val DAY_MILLIS = 24L * 60 * 60 * 1000
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +46,7 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
         voskService = VoskService(this, this)
         ttsService = TtsService(this)
         repo = AshaRepository(AppDatabase.get(this))
+        clinicalEngine = ClinicalEngine(ClinicalRules.load(this))
 
         val permissionCheck =
             ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.RECORD_AUDIO)
@@ -127,14 +129,16 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
 
     private fun recordVisit(text: String) {
         val visit = parser.parse(text)
-        val guidance = clinicalEngine.getGuidance(visit)
-        speakAndShow(guidance)
-        lifecycleScope.launch { repo.recordVisit(visit, guidance) }
+        val guidance = clinicalEngine.evaluate(visit)
+        speakAndShow(guidance.message)
+        val followUpMillis = guidance.followUpDays?.let { System.currentTimeMillis() + it * DAY_MILLIS }
+        lifecycleScope.launch {
+            repo.recordVisit(visit, guidance.message, guidance.referral, followUpMillis)
+        }
     }
 
     private fun handleGuidance(text: String) {
-        val guidance = clinicalEngine.getGuidance(parser.parse(text))
-        speakAndShow(guidance)
+        speakAndShow(clinicalEngine.evaluate(parser.parse(text)).message)
     }
 
     private fun handleRecall(text: String) {
