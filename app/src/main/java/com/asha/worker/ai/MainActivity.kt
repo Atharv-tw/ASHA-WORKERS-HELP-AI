@@ -10,6 +10,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.asha.worker.ai.data.AppDatabase
+import com.asha.worker.ai.data.AshaRepository
+import com.asha.worker.ai.text.DevanagariNormalizer
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -17,12 +20,14 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
 
     private lateinit var statusText: TextView
     private lateinit var recordButton: Button
-    
+
     private lateinit var voskService: VoskService
-    private lateinit var parser: HealthDataParser
-    private lateinit var db: AppDatabase
-    private lateinit var clinicalEngine: ClinicalEngine
     private lateinit var ttsService: TtsService
+    private lateinit var repo: AshaRepository
+
+    private val parser = HealthDataParser()
+    private val router = IntentRouter(parser)
+    private val clinicalEngine = ClinicalEngine()
 
     private var isRecording = false
 
@@ -38,110 +43,117 @@ class MainActivity : AppCompatActivity(), VoskService.VoskListener {
         recordButton = findViewById(R.id.recordButton)
 
         voskService = VoskService(this, this)
-        parser = HealthDataParser()
-        db = AppDatabase.getDatabase(this)
-        clinicalEngine = ClinicalEngine()
         ttsService = TtsService(this)
+        repo = AshaRepository(AppDatabase.get(this))
 
-        // Check permissions
-        val permissionCheck = ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.RECORD_AUDIO)
+        val permissionCheck =
+            ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.RECORD_AUDIO)
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), PERMISSIONS_REQUEST_RECORD_AUDIO)
+            ActivityCompat.requestPermissions(
+                this, arrayOf(Manifest.permission.RECORD_AUDIO), PERMISSIONS_REQUEST_RECORD_AUDIO
+            )
         } else {
             initVosk()
         }
 
-        recordButton.setOnClickListener {
-            toggleRecording()
-        }
+        recordButton.setOnClickListener { toggleRecording() }
     }
 
     private fun initVosk() {
-        statusText.text = "Initializing Hindi Voice Model..."
+        statusText.text = getString(R.string.status_initializing)
         voskService.initModel()
     }
 
     private fun toggleRecording() {
         if (isRecording) {
             voskService.stopListening()
-            recordButton.text = "Record Visit"
+            recordButton.text = getString(R.string.btn_record)
             isRecording = false
         } else {
             voskService.startListening()
-            recordButton.text = "Stop Recording"
+            recordButton.text = getString(R.string.btn_stop)
             isRecording = true
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSIONS_REQUEST_RECORD_AUDIO) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 initVosk()
             } else {
-                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_SHORT).show()
                 finish()
             }
         }
     }
 
+    // --- VoskListener ---------------------------------------------------------
+
     override fun onResult(hypothesis: String) {
-        // Vosk result is JSON, extract text
-        val text = try {
-            JSONObject(hypothesis).getString("text")
-        } catch (e: Exception) {
-            hypothesis
-        }
-
-        if (text.isNotEmpty()) {
-            processVisit(text)
-        }
-    }
-
-    private fun processVisit(text: String) {
-        statusText.text = "Processing: $text"
-        
-        // 1. Parse Data
-        val visit = parser.parse(text)
-        
-        // 2. Save to DB
-        lifecycleScope.launch {
-            db.visitDao().insert(
-                VisitRecord(
-                    patientName = visit.patientName ?: "Unknown",
-                    age = visit.ageYears,
-                    symptom = visit.symptomCode,
-                    durationDays = visit.durationDays
-                )
-            )
-        }
-
-        // 3. Get Guidance & Speak
-        val guidance = clinicalEngine.getGuidance(visit)
-        statusText.text = "Guidance: $guidance"
-        ttsService.speak(guidance)
+        val text = extract(hypothesis, "text")
+        if (text.isNotEmpty()) route(text)
     }
 
     override fun onPartialResult(hypothesis: String) {
-        val text = try {
-            JSONObject(hypothesis).getString("partial")
-        } catch (e: Exception) {
-            hypothesis
-        }
-        if (text.isNotEmpty()) {
-            statusText.text = "Listening: $text"
-        }
+        val text = extract(hypothesis, "partial")
+        if (text.isNotEmpty()) statusText.text = getString(R.string.status_listening, text)
     }
 
     override fun onError(e: Exception) {
-        statusText.text = "Error: ${e.message}"
+        statusText.text = getString(R.string.status_error, e.message ?: "")
         isRecording = false
-        recordButton.text = "Record Visit"
+        recordButton.text = getString(R.string.btn_record)
     }
 
     override fun onReady() {
-        statusText.text = "Ready to record (Hindi)"
+        statusText.text = getString(R.string.status_ready)
         recordButton.isEnabled = true
+    }
+
+    // --- routing --------------------------------------------------------------
+
+    private fun route(text: String) {
+        when (router.classify(text)) {
+            Intent.RECORD_VISIT -> recordVisit(text)
+            Intent.GUIDANCE_QUERY -> handleGuidance(text)
+            Intent.RECALL -> handleRecall(text)
+            Intent.DAILY_PLAN -> speakAndShow(getString(R.string.plan_not_ready))
+            Intent.UNKNOWN -> speakAndShow(getString(R.string.not_understood))
+        }
+    }
+
+    private fun recordVisit(text: String) {
+        val visit = parser.parse(text)
+        val guidance = clinicalEngine.getGuidance(visit)
+        speakAndShow(guidance)
+        lifecycleScope.launch { repo.recordVisit(visit, guidance) }
+    }
+
+    private fun handleGuidance(text: String) {
+        val guidance = clinicalEngine.getGuidance(parser.parse(text))
+        speakAndShow(guidance)
+    }
+
+    private fun handleRecall(text: String) {
+        val name = parser.parse(text).patientName ?: DevanagariNormalizer.normalize(text)
+        lifecycleScope.launch {
+            val result = repo.recall(name)
+            speakAndShow(MemoryNarrator.narrate(name, result))
+        }
+    }
+
+    private fun speakAndShow(message: String) {
+        statusText.text = message
+        ttsService.speak(message)
+    }
+
+    private fun extract(json: String, key: String): String = try {
+        JSONObject(json).getString(key)
+    } catch (e: Exception) {
+        json
     }
 
     override fun onDestroy() {

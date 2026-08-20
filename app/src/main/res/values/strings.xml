@@ -1,3 +1,20 @@
 <resources>
-    <string name="app_name">AshaWorkerAi</string>
+    <string name="app_name">ASHA सहायक</string>
+
+    <!-- Record screen -->
+    <string name="welcome">नमस्ते, आशा दीदी</string>
+    <string name="btn_record">विज़िट रिकॉर्ड करें</string>
+    <string name="btn_stop">रोकें</string>
+
+    <!-- Status messages -->
+    <string name="status_initializing">हिंदी वॉइस मॉडल तैयार हो रहा है…</string>
+    <string name="status_ready">रिकॉर्ड के लिए तैयार (हिंदी)</string>
+    <string name="status_listening">सुन रहा हूँ: %1$s</string>
+    <string name="status_error">त्रुटि: %1$s</string>
+    <string name="permission_denied">माइक्रोफ़ोन की अनुमति ज़रूरी है</string>
+
+    <!-- Routed responses -->
+    <string name="plan_not_ready">आज की योजना अभी तैयार नहीं है।</string>
+    <string name="not_understood">माफ़ कीजिए, मैं समझ नहीं पाया।</string>
+    <string name="recall_pending">याद करने की सुविधा तैयार हो रही है।</string>
 </resources>
